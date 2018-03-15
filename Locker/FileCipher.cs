@@ -10,9 +10,12 @@ namespace Locker
     {
         public void EncryptFiles(FileInfo[] files, string outputDirectory, string password)
         {
-            foreach (var fileInfos in files)
+            foreach (var fileInfo in files)
             {
-                FileEncrypt(fileInfos.FullName, outputDirectory, password);
+                var outputFile = Path.Combine(outputDirectory, ReverseString(fileInfo.Name));
+
+                Console.WriteLine($"Encrypting file {fileInfo.Name}");
+                FileEncrypt(fileInfo.FullName, outputFile, password);
             }
         }
 
@@ -20,7 +23,10 @@ namespace Locker
         {
             foreach (var fileInfo in filesInfo)
             {
-                FileDecrypt(fileInfo.FullName, outputDirectory + "\\" + $"D_{DateTime.Now.ToString("yyyyMMddHHmmss")}", password);
+                var outputFile = Path.Combine(outputDirectory, ReverseString(fileInfo.Name));
+
+                Console.WriteLine($"Decrypting file {fileInfo.Name}");
+                FileDecrypt(fileInfo.FullName, outputFile, password);
             }
         }
 
@@ -83,7 +89,7 @@ namespace Locker
             return AES;
         }
         
-        private void FileEncrypt(string inputFile, string outputDirectory, string password)
+        private void FileEncrypt(string inputFile, string outputFile, string password)
         {
             byte[] salt = GenerateRandomSalt();
 
@@ -91,7 +97,6 @@ namespace Locker
 
             FileStream fsIn = new FileStream(inputFile, FileMode.Open);
 
-            var outputFile = Path.Combine(outputDirectory, Guid.NewGuid().ToString("N"));
             FileStream fsCrypt = new FileStream(outputFile, FileMode.Create);
             fsCrypt.Write(salt, 0, salt.Length);
             
@@ -119,7 +124,7 @@ namespace Locker
         
         private void FileDecrypt(string inputFile, string outputFile, string password)
         {
-            FileStream fsOut = new FileStream(outputFile + ".jpg", FileMode.Create);
+            FileStream fsOut = new FileStream(outputFile, FileMode.Create);
 
             byte[] salt = new byte[32];
             FileStream fsCrypt = new FileStream(inputFile, FileMode.Open);
@@ -151,6 +156,13 @@ namespace Locker
 
             fsOut.Close();
             fsCrypt.Close();
+        }
+
+        private string ReverseString(string word)
+        {
+            char[] charArray = word.ToCharArray();
+            Array.Reverse(charArray);
+            return new String(charArray);
         }
     }
 }

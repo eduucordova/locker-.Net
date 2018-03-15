@@ -20,12 +20,13 @@ namespace Locker
 
         static void Main(string[] args)
         {
-            //ReadArgs(args);
+            if (!ReadArgs(args))
+                return;
 
-            InputDirectory = @"C:\Users\Eduardo\Downloads\Temp";
-            OutputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
-            Mode = Mode.encrypt;
-            Password = "123456";
+            //InputDirectory = @"C:\Users\Eduardo\Downloads\Temp";
+            //OutputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
+            //Mode = Mode.encrypt;
+            //Password = "123456";
 
             if (Mode == Mode.encrypt)
             {
@@ -47,12 +48,7 @@ namespace Locker
 
                 File.WriteAllText(passwordPath, hashPassword);
             }
-
-            InputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
-            OutputDirectory = @"C:\Users\Eduardo\Downloads\TempDecrypt";
-            Mode = Mode.decrypt;
-
-            if (Mode == Mode.decrypt)
+            else if (Mode == Mode.decrypt)
             {
                 var inputDirectoryInfo = new DirectoryInfo(InputDirectory);
 
@@ -73,10 +69,22 @@ namespace Locker
             }
         }
 
-        private static void ReadArgs(string[] args)
+        private static bool ReadArgs(string[] args)
         {
+            if (!args.Any())
+            {
+                Console.WriteLine("Nothing to do!");
+                return false;
+            }
+
             var arg = string.Empty;
-            
+
+            if (args[0].Equals("--help") || args[0].Equals("-h"))
+            {
+                ShowHelp();
+                return false;
+            }
+
             Mode = (Mode)Enum.Parse(typeof(Mode), args[0]);
 
             for (int i = 1; i < args.Length; i++)
@@ -95,9 +103,19 @@ namespace Locker
                         OutputDirectory = args[++i];
                         break;
                     default:
-                        break;
+                        throw new ArgumentException($"Argument {arg} is not valid");
                 }
             }
+
+
+            return true;
+        }
+
+        private static void ShowHelp()
+        {
+            Console.WriteLine("-p:  Master password used to encrypt/decrypt files");
+            Console.WriteLine("-d:  Directory where are the files to be encrypted/decrypted");
+            Console.WriteLine("-o:  Directory where the encrypted/decrypted files should be created");
         }
     }
 }
