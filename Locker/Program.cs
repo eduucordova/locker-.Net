@@ -25,9 +25,6 @@ namespace Locker
             InputDirectory = @"C:\Users\Eduardo\Downloads\Temp";
             OutputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
             Mode = Mode.encrypt;
-            InputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
-            OutputDirectory = @"C:\Users\Eduardo\Downloads\TempDecrypt";
-            Mode = Mode.decrypt;
             Password = "123456";
 
             if (Mode == Mode.encrypt)
@@ -49,10 +46,12 @@ namespace Locker
                 var passwordPath = Path.Combine(OutputDirectory, "password");
 
                 File.WriteAllText(passwordPath, hashPassword);
-
-                return;
             }
-            
+
+            InputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
+            OutputDirectory = @"C:\Users\Eduardo\Downloads\TempDecrypt";
+            Mode = Mode.decrypt;
+
             if (Mode == Mode.decrypt)
             {
                 var inputDirectoryInfo = new DirectoryInfo(InputDirectory);
@@ -69,7 +68,7 @@ namespace Locker
                     if (!Directory.Exists(OutputDirectory))
                         Directory.CreateDirectory(OutputDirectory);
 
-                    fc.DecryptFiles(inputDirectoryInfo.GetFiles().Where(x => x.FullName != password), OutputDirectory, password);
+                    fc.DecryptFiles(inputDirectoryInfo.GetFiles().Where(x => x.FullName != password), OutputDirectory, Password);
                 }
             }
         }

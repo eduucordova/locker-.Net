@@ -54,146 +54,103 @@ namespace Locker
 
             return true;
         }
-
-        /// <summary>
-        /// Creates a random salt that will be used to encrypt your file. This method is required on FileEncrypt.
-        /// </summary>
-        /// <returns></returns>
+        
         public static byte[] GenerateRandomSalt()
         {
             byte[] data = new byte[32];
 
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    // Fille the buffer with the generated data
-                    rng.GetBytes(data);
-                }
-            }
+                rng.GetBytes(data);
 
             return data;
         }
 
-        /// <summary>
-        /// Encrypts a file from its path and a plain password.
-        /// </summary>
-        /// <param name="inputFile"></param>
-        /// <param name="password"></param>
-        private void FileEncrypt(string inputFile, string outputDirectory, string password)
+        private RijndaelManaged NewRijndaelManaged(string password, byte[] salt)
         {
-            var outputFile = Path.Combine(outputDirectory, Guid.NewGuid().ToString("N"));
-
-            byte[] salt = GenerateRandomSalt();
-            
-            FileStream fsCrypt = new FileStream(outputFile, FileMode.Create);
-            
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-            
             RijndaelManaged AES = new RijndaelManaged
             {
                 KeySize = 256,
                 BlockSize = 128,
+                Padding = PaddingMode.ISO10126,
                 Mode = CipherMode.CBC
             };
-            
+
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
             AES.Key = key.GetBytes(AES.KeySize / 8);
             AES.IV = key.GetBytes(AES.BlockSize / 8);
-            
-            fsCrypt.Write(salt, 0, salt.Length);
 
-            CryptoStream cs = new CryptoStream(fsCrypt, AES.CreateEncryptor(), CryptoStreamMode.Write);
+            return AES;
+        }
+        
+        private void FileEncrypt(string inputFile, string outputDirectory, string password)
+        {
+            byte[] salt = GenerateRandomSalt();
+
+            RijndaelManaged AES = NewRijndaelManaged(password, salt);
 
             FileStream fsIn = new FileStream(inputFile, FileMode.Open);
 
-            //create a buffer (1mb) so only this amount will allocate in the memory and not the whole file
+            var outputFile = Path.Combine(outputDirectory, Guid.NewGuid().ToString("N"));
+            FileStream fsCrypt = new FileStream(outputFile, FileMode.Create);
+            fsCrypt.Write(salt, 0, salt.Length);
+            
             byte[] buffer = new byte[1048576];
             int read;
 
-            try
+            using (CryptoStream cs = new CryptoStream(fsCrypt, AES.CreateEncryptor(), CryptoStreamMode.Write))
             {
-                while ((read = fsIn.Read(buffer, 0, buffer.Length)) > 0)
+                try
                 {
-                    cs.Write(buffer, 0, read);
+                    while ((read = fsIn.Read(buffer, 0, buffer.Length)) > 0)
+                        cs.Write(buffer, 0, read);
+                    
+                    cs.FlushFinalBlock();
                 }
-                cs.FlushFinalBlock();
-                // Close up
-                fsIn.Close();
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: " + ex.Message);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-            finally
-            {
-                cs.Close();
-                fsCrypt.Close();
-            }
-        }
 
-        /// <summary>
-        /// Decrypts an encrypted file with the FileEncrypt method through its path and the plain password.
-        /// </summary>
-        /// <param name="inputFile"></param>
-        /// <param name="outputFile"></param>
-        /// <param name="password"></param>
+            fsIn.Close();
+            fsCrypt.Close();
+        }
+        
         private void FileDecrypt(string inputFile, string outputFile, string password)
         {
-            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
-            byte[] salt = new byte[32];
+            FileStream fsOut = new FileStream(outputFile + ".jpg", FileMode.Create);
 
+            byte[] salt = new byte[32];
             FileStream fsCrypt = new FileStream(inputFile, FileMode.Open);
             fsCrypt.Read(salt, 0, salt.Length);
 
-            RijndaelManaged AES = new RijndaelManaged
-            {
-                KeySize = 256,
-                BlockSize = 128,
-                Mode = CipherMode.CBC
-            };
-
-            var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
-            AES.Key = key.GetBytes(AES.KeySize / 8);
-            AES.IV = key.GetBytes(AES.BlockSize / 8);
-
-            CryptoStream cs = new CryptoStream(fsCrypt, AES.CreateDecryptor(), CryptoStreamMode.Read);
-
-            FileStream fsOut = new FileStream(outputFile, FileMode.Create);
+            RijndaelManaged AES = NewRijndaelManaged(password, salt);
 
             int read;
             byte[] buffer = new byte[1048576];
 
-            try
+            using (CryptoStream cs = new CryptoStream(fsCrypt, AES.CreateDecryptor(), CryptoStreamMode.Read))
             {
-                while ((read = cs.Read(buffer, 0, buffer.Length)) > 0)
+                try
                 {
-                    fsOut.Write(buffer, 0, read);
+                    while ((read = cs.Read(buffer, 0, buffer.Length)) > 0)
+                        fsOut.Write(buffer, 0, read);
+
+                    cs.Flush();
                 }
-                cs.Flush();
-            }
-            catch (CryptographicException ex_CryptographicException)
-            {
-                Console.WriteLine("CryptographicException error: " + ex_CryptographicException.Message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
+                catch (CryptographicException ex_CryptographicException)
+                {
+                    Console.WriteLine("CryptographicException error: " + ex_CryptographicException.Message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: " + ex.Message);
+                }
             }
 
-            try
-            {
-                cs.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error by closing CryptoStream: " + ex.Message);
-            }
-            finally
-            {
-                fsOut.Close();
-                fsCrypt.Close();
-            }
+            fsOut.Close();
+            fsCrypt.Close();
         }
     }
 }
