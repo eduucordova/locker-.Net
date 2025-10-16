@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Locker.Infrastructure.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -8,6 +9,10 @@ namespace Locker
 {
     public class FileCipher
     {
+        private const int SALT_SIZE = 32;
+
+
+
         public void EncryptFiles(FileInfo[] files, string outputDirectory, string password)
         {
             foreach (var fileInfo in files)
@@ -30,40 +35,11 @@ namespace Locker
             }
         }
 
-        public string Hash(string password)
+
+
+        private static byte[] GenerateRandomSalt()
         {
-            byte[] salt = GenerateRandomSalt();
-
-            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);
-            byte[] hash = pbkdf2.GetBytes(20);
-            
-            byte[] hashBytes = new byte[52];
-            Array.Copy(salt, 0, hashBytes, 0, 32);
-            Array.Copy(hash, 0, hashBytes, 32, 20);
-
-            return Convert.ToBase64String(hashBytes);
-        }
-        
-        public bool Verify(string password, string savedPasswordHash)
-        {
-            byte[] hashBytes = Convert.FromBase64String(savedPasswordHash);
-
-            byte[] salt = new byte[32];
-            Array.Copy(hashBytes, 0, salt, 0, 32);
-
-            var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);
-            byte[] hash = pbkdf2.GetBytes(20);
-
-            for (int i = 0; i < 20; i++)
-                if (hashBytes[i + 32] != hash[i])
-                    throw new UnauthorizedAccessException();
-
-            return true;
-        }
-        
-        public static byte[] GenerateRandomSalt()
-        {
-            byte[] data = new byte[32];
+            byte[] data = new byte[SALT_SIZE];
 
             using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
                 rng.GetBytes(data);

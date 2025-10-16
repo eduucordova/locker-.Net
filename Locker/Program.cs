@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Locker.Infrastructure.Interfaces;
+using Locker.Infrastructure.Services;
+using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -23,6 +25,9 @@ namespace Locker
             if (!ReadArgs(args))
                 return;
 
+
+            IPasswordManager passwordManager = new PasswordManager(Password);
+
             //InputDirectory = @"C:\Users\Eduardo\Downloads\Temp";
             //OutputDirectory = @"C:\Users\Eduardo\Downloads\TempEncrypt";
             //Mode = Mode.encrypt;
@@ -42,11 +47,11 @@ namespace Locker
 
                 fc.EncryptFiles(inputDirectoryInfo.GetFiles(), OutputDirectory, Password);
 
-                string hashPassword = fc.Hash(Password);
+                var hashPassword = passwordManager.Hash();
 
                 var passwordPath = Path.Combine(OutputDirectory, "password");
 
-                File.WriteAllText(passwordPath, hashPassword);
+                File.WriteAllText(passwordPath, Convert.ToBase64String(hashPassword));
             }
             else if (Mode == Mode.decrypt)
             {
@@ -58,8 +63,8 @@ namespace Locker
                 FileCipher fc = new FileCipher();
 
                 var password = inputDirectoryInfo.GetFiles("password").Single().FullName;
-
-                if (fc.Verify(Password, File.ReadAllText(password)))
+                var passwordBytes = Convert.FromBase64String(File.ReadAllText(password));
+                if (passwordManager.Verify(passwordBytes))
                 {
                     if (!Directory.Exists(OutputDirectory))
                         Directory.CreateDirectory(OutputDirectory);
