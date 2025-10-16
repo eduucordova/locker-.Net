@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36401.2 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Locker", "Locker\Locker.csproj", "{1518575A-3D4E-4591-97B4-B6FC5C3A7730}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Locker.Infrastructure.Tests", "LockerTests\Locker.Infrastructure.Tests.csproj", "{EAFE6B8B-CFC1-454D-A3F9-EDC8B6C4DDE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Locker.Application.Tests", "LockerTests\Locker.Application.Tests.csproj", "{EAFE6B8B-CFC1-454D-A3F9-EDC8B6C4DDE2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

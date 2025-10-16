@@ -4,18 +4,13 @@ using System.Security.Cryptography;
 
 namespace Locker.Infrastructure.Services;
 
-public class PasswordManager : IPasswordManager
+public class PasswordManager(string password) : IPasswordManager
 {
     private const int SALT_SIZE = 8;
     private const int HASH_SIZE = 20;
     private const int ITERATIONS = 1000;
 
-    private readonly string _password;
-
-    public PasswordManager(string password)
-    {
-        _password = password;
-    }
+    private readonly string _password = password;
 
     public byte[] Hash()
     {

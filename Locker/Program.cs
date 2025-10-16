@@ -45,9 +45,9 @@ namespace Locker
 
                 FileCipher fc = new FileCipher();
 
-                fc.EncryptFiles(inputDirectoryInfo.GetFiles(), OutputDirectory, Password);
-
                 var hashPassword = passwordManager.Hash();
+
+                fc.EncryptFiles(inputDirectoryInfo.GetFiles(), OutputDirectory, hashPassword);
 
                 var passwordPath = Path.Combine(OutputDirectory, "password");
 
@@ -69,7 +69,7 @@ namespace Locker
                     if (!Directory.Exists(OutputDirectory))
                         Directory.CreateDirectory(OutputDirectory);
 
-                    fc.DecryptFiles(inputDirectoryInfo.GetFiles().Where(x => x.FullName != password), OutputDirectory, Password);
+                    fc.DecryptFiles(inputDirectoryInfo.GetFiles().Where(x => x.FullName != password), OutputDirectory, passwordBytes);
                 }
             }
         }
