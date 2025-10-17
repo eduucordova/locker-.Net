@@ -2,6 +2,6 @@
 
 public interface ICipher
 {
-    byte[] Encrypt(string input);
-    string Decrypt(byte[] input);
+    byte[] Encrypt(byte[] input);
+    byte[] Decrypt(byte[] input);
 }

@@ -1,5 +1,6 @@
 ﻿using Locker.Application.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -12,7 +13,7 @@ public class AesCipher(byte[] key) : ICipher
 
     private readonly byte[] _key = key;
 
-    public byte[] Encrypt(string input)
+    public byte[] Encrypt(byte[] input)
     {
         byte[] encryptedFinal;
 
@@ -20,16 +21,17 @@ public class AesCipher(byte[] key) : ICipher
         {
             aesAlg.Key = ValidKey();
             aesAlg.IV = InitialiseVector();
+            aesAlg.Padding = PaddingMode.PKCS7;
 
             // Create an encryptor to perform the stream transform.
             ICryptoTransform encryptor = aesAlg.CreateEncryptor();
 
             using MemoryStream msEncrypt = new();
             using (CryptoStream csEncrypt = new(msEncrypt, encryptor, CryptoStreamMode.Write))
-            using (StreamWriter swEncrypt = new(csEncrypt))
             {
-                //Write all data to the stream.
-                swEncrypt.Write(input);
+                foreach (byte b in input) csEncrypt.WriteByte(b);
+
+                csEncrypt.FlushFinalBlock();
             }
 
             var encryptedBytes = msEncrypt.ToArray();
@@ -42,14 +44,15 @@ public class AesCipher(byte[] key) : ICipher
         return encryptedFinal;
     }
 
-    public string Decrypt(byte[] input)
+    public byte[] Decrypt(byte[] input)
     {
-        string plaintext = null;
+        List<byte> result = new();
 
         using (Aes aesAlg = Aes.Create())
         {
             aesAlg.Key = ValidKey();
             aesAlg.IV = input[0..IV_BYTE_SIZE];
+            aesAlg.Padding = PaddingMode.PKCS7;
 
             // Create a decryptor to perform the stream transform.
             ICryptoTransform decryptor = aesAlg.CreateDecryptor();
@@ -57,15 +60,17 @@ public class AesCipher(byte[] key) : ICipher
             // Create the streams used for decryption.
             using (MemoryStream msDecrypt = new(input[IV_BYTE_SIZE..]))
             using (CryptoStream csDecrypt = new(msDecrypt, decryptor, CryptoStreamMode.Read))
-            using (StreamReader srDecrypt = new(csDecrypt))
             {
-                // Read the decrypted bytes from the decrypting stream
-                // and place them in a string.
-                plaintext = srDecrypt.ReadToEnd();
+                byte[] buffer = new byte[aesAlg.BlockSize / 8];
+                int read;
+                while ((read = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    result.AddRange(buffer[0..read]);
+                }
             }
         }
 
-        return plaintext;
+        return [.. result];
     }
 
     private static byte[] InitialiseVector()

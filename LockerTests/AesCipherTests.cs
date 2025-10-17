@@ -1,5 +1,7 @@
-﻿using Locker.Application.Services;
+﻿using Locker.Application.Interfaces;
+using Locker.Application.Services;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Locker.Application.Tests
 {
@@ -11,7 +13,7 @@ namespace Locker.Application.Tests
         public void EncryptDecrypt_RoundTrip_With32ByteKey()
         {
             var key = RandomNumberGenerator.GetBytes(32);
-            var plainText = "The quick brown fox jumps over the lazy dog";
+            var plainText = RandomBytes();
 
             var cipher = new AesCipher(key);
 
@@ -25,7 +27,7 @@ namespace Locker.Application.Tests
         public void EncryptDecrypt_Works_AcrossDifferentInstances_WithSameKey()
         {
             var key = RandomNumberGenerator.GetBytes(32);
-            var plainText = "Cross-instance test";
+            var plainText = RandomBytes();
 
             var encryptor = new AesCipher(key);
             var decryptor = new AesCipher(key);
@@ -37,10 +39,25 @@ namespace Locker.Application.Tests
         }
 
         [Fact]
+        public void EncryptDecrypt_Fails_WithDifferentKeys()
+        {
+            var key1 = RandomNumberGenerator.GetBytes(32);
+            var key2 = RandomNumberGenerator.GetBytes(32);
+            var plainText = RandomBytes();
+
+            var encryptor = new AesCipher(key1);
+            var decryptor = new AesCipher(key2);
+
+            var encrypted = encryptor.Encrypt(plainText);
+
+            Assert.ThrowsAny<Exception>(() => decryptor.Decrypt(encrypted));
+        }
+
+        [Fact]
         public void Encrypt_Returns_DifferentCiphertexts_ForSamePlainText_DueToRandomIV()
         {
             var key = RandomNumberGenerator.GetBytes(32);
-            var plainText = "Repeatable text";
+            var plainText = RandomBytes();
 
             var cipher = new AesCipher(key);
 
@@ -60,10 +77,10 @@ namespace Locker.Application.Tests
         public void EncryptDecrypt_Succeeds_ForVariousKeyLengths(int keyLength)
         {
             var key = RandomNumberGenerator.GetBytes(keyLength);
-            var plainText = $"Key length {keyLength}";
+            var plainText = Encoding.ASCII.GetBytes($"Key length {keyLength}");
 
             var cipher = new AesCipher(key);
-
+            
             var encrypted = cipher.Encrypt(plainText);
             var decrypted = cipher.Decrypt(encrypted);
 
@@ -85,7 +102,7 @@ namespace Locker.Application.Tests
         public void Decrypt_WithTamperedCiphertext_Fails()
         {
             var key = RandomNumberGenerator.GetBytes(32);
-            var plainText = "Sensitive data";
+            var plainText = RandomBytes(IV_BYTE_SIZE + 1);
             var cipher = new AesCipher(key);
 
             var encrypted = cipher.Encrypt(plainText);
@@ -96,8 +113,9 @@ namespace Locker.Application.Tests
                 encrypted[IV_BYTE_SIZE] ^= 0xFF;
             }
 
-            // Decryption should fail (usually with a cryptographic/padding exception) or produce wrong output.
-            Assert.ThrowsAny<Exception>(() => cipher.Decrypt(encrypted));
+            var decrypted = cipher.Decrypt(encrypted);
+
+            Assert.NotEqual(plainText, decrypted);
         }
 
         [Fact]
@@ -105,11 +123,18 @@ namespace Locker.Application.Tests
         {
             var key = RandomNumberGenerator.GetBytes(32);
             var cipher = new AesCipher(key);
+            var emptyBytes = new byte[0];
 
-            var encrypted = cipher.Encrypt(string.Empty);
+            var encrypted = cipher.Encrypt(emptyBytes);
             var decrypted = cipher.Decrypt(encrypted);
 
-            Assert.Equal(string.Empty, decrypted);
+            Assert.Equal(emptyBytes, decrypted);
+        }
+
+        private byte[] RandomBytes(int min = 128, int max = 1064)
+        {
+            int length = Random.Shared.Next(min, max);
+            return RandomNumberGenerator.GetBytes(length);
         }
     }
 }

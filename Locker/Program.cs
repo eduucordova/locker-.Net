@@ -3,7 +3,6 @@ using Locker.Infrastructure.Services;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 
 namespace Locker
 {
