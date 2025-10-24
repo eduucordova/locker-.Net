@@ -1,5 +1,5 @@
-﻿using Locker.Infrastructure.Interfaces;
-using Locker.Infrastructure.Services;
+﻿using Application.Interfaces;
+using Application.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -23,7 +23,6 @@ namespace Locker
         {
             if (!ReadArgs(args))
                 return;
-
 
             IPasswordManager passwordManager = new PasswordManager(Password);
 

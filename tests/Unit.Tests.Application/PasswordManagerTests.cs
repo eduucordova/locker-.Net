@@ -1,6 +1,6 @@
-using Locker.Infrastructure.Services;
+using Application.Services;
 
-namespace Locker.Application.Tests;
+namespace Unit.Tests.Application;
 
 public class PasswordManagerTests
 {

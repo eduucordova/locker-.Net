@@ -1,5 +1,5 @@
-﻿using Locker.Application.Interfaces;
-using Locker.Application.Services;
+﻿using Application.Interfaces;
+using Application.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;

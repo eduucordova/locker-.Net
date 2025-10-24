@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Locker": {
+      "commandName": "Project",
+      "commandLineArgs": "decrypt -d \"C:\\Users\\Eduardo\\Pictures\\Camera Roll\\out\" -o \"C:\\Users\\Eduardo\\Pictures\\Camera Roll\\new\" -p 123"
+    }
+  }
+}

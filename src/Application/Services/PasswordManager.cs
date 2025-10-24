@@ -1,8 +1,7 @@
-﻿using Locker.Infrastructure.Interfaces;
-using System;
+﻿using Application.Interfaces;
 using System.Security.Cryptography;
 
-namespace Locker.Infrastructure.Services;
+namespace Application.Services;
 
 public class PasswordManager(string password) : IPasswordManager
 {

@@ -1,17 +1,14 @@
-﻿using Locker.Application.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using Application.Interfaces;
 using System.Security.Cryptography;
 
-namespace Locker.Application.Services;
+namespace Application.Services;
 
 public class AesCipher(byte[] key) : ICipher
 {
     private const int IV_BYTE_SIZE = 16;
     private const int KEY_BYTE_SIZE = 32;
 
-    private readonly byte[] _key = key;
+    public byte[] Key { get; set; } = key;
 
     public byte[] Encrypt(byte[] input)
     {
@@ -46,7 +43,7 @@ public class AesCipher(byte[] key) : ICipher
 
     public byte[] Decrypt(byte[] input)
     {
-        List<byte> result = new();
+        List<byte> result = [];
 
         using (Aes aesAlg = Aes.Create())
         {
@@ -80,17 +77,17 @@ public class AesCipher(byte[] key) : ICipher
 
     private byte[] ValidKey()
     {
-        if (_key.Length == KEY_BYTE_SIZE) return _key;
+        if (Key.Length == KEY_BYTE_SIZE) return Key;
 
-        if (_key.Length > KEY_BYTE_SIZE) return _key[0..KEY_BYTE_SIZE];
+        if (Key.Length > KEY_BYTE_SIZE) return Key[0..KEY_BYTE_SIZE];
 
         var validKey = new byte[KEY_BYTE_SIZE];
-        Array.Copy(_key, validKey, _key.Length);
-        int validBytes = _key.Length;
+        Array.Copy(Key, validKey, Key.Length);
+        int validBytes = Key.Length;
         while (validBytes < KEY_BYTE_SIZE)
         {
-            int length = Math.Min(KEY_BYTE_SIZE - validBytes, _key.Length);
-            Array.Copy(_key, 0, validKey, validBytes, length);
+            int length = Math.Min(KEY_BYTE_SIZE - validBytes, Key.Length);
+            Array.Copy(Key, 0, validKey, validBytes, length);
             validBytes += length;
         }
         return validKey;
